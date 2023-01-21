@@ -39,7 +39,7 @@ def profile(request, username):
     try:
         following = Follow.objects.get(
             user_id=user.pk, author_id=author.pk
-        )
+        ) and user != author
     except Follow.DoesNotExist:
         following = False
     context = {
