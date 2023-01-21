@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Технологии{% endblock %}
+{% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/round_border.css' %}">
+<div>
+  <h3 style="text-align:center">Вот что я умею</h3>
+  <div style="border:2px dotted #555; border-radius:10px; text-align:center;  margin:40px; padding:20px;" >
+    <p> Часто мне кажется, что я ничего не умею.</p>
+    <p> Но если вы видите эту страницу, значит, что-то умею.</p>
+  </div>
+{% endblock %}
