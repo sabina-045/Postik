@@ -36,11 +36,11 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts_list = Post.objects.filter(author=author)
     user = request.user
-    try:
-        following = Follow.objects.get(
-            user_id=user.pk, author_id=author.pk
-        ) and user != author
-    except Follow.DoesNotExist:
+    if Follow.objects.filter(
+            user_id=user.pk,
+            author_id=author.pk).exists() and user != author:
+        following = True
+    else:
         following = False
     context = {
         'page_obj': post_paginator(request, author_posts_list),
