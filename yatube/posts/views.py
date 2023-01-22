@@ -36,16 +36,15 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts_list = Post.objects.filter(author=author)
     user = request.user
-    if Follow.objects.filter(
+    try:
+        following = Follow.objects.get(
             user_id=user.pk,
-            author_id=author.pk).exists() and user != author:
-        following = True
-    else:
+            author_id=author.pk)
+    except Follow.DoesNotExist:
         following = False
     context = {
         'page_obj': post_paginator(request, author_posts_list),
         'author': author,
-        'user': user,
         'following': following
     }
 
@@ -146,10 +145,10 @@ def profile_follow(request, username):
     """Подписаться на автора поста."""
     author = get_object_or_404(User, username=username)
     user = request.user
-    follow = Follow.objects.create(
-        user_id=user.pk,
-        author_id=author.pk)
-    follow.save()
+    if not Follow.objects.filter(
+            user_id=user.pk,
+            author_id=author.pk).exists() and author != user:
+        Follow(user_id=user.pk, author_id=author.pk).save()
     context = {
         'page_obj': post_paginator(
             request,
