@@ -8,7 +8,6 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.models import Comment, Follow, Group, Post, User
-
 from .. import constants
 from .utils import get_temporary_image
 
@@ -34,14 +33,9 @@ class PostsPagesTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text='Основной тестовый пост',
             group=cls.group,
             image=get_temporary_image()
-        )
-        cls.comment = Comment.objects.create(
-            author=cls.user,
-            text='Тестовый комментарий',
-            post=cls.post
         )
 
     @classmethod
@@ -111,19 +105,29 @@ class PostsPagesTest(TestCase):
             reverse('posts:post_edit', kwargs={'post_id': self.post.id})
         )
         self.check_context_form(response)
-        post = response.context['post']
-        self.assertEqual(post.id, self.post.pk)
-        self.assertEqual(post.text, self.post.text)
-        self.assertEqual(post.author, self.post.author)
-        self.assertEqual(post.group, self.post.group)
+        self.check_page_post_fields(response, True)
+        is_edit = response.context['is_edit']
+        self.assertIsInstance(is_edit, bool)
 
     def test_post_detail_page_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
-        response = (self.authorized_client.get(reverse(
+        comment = Comment.objects.create(
+            author=self.user,
+            text='Тестовый комментарий',
+            post=self.post
+        )
+        response = self.authorized_client.get(reverse(
             'posts:post_detail',
             kwargs={'post_id': self.post.id}))
-        )
         self.check_page_post_fields(response, True)
+        form = response.context['form']
+        self.assertTrue(len(form.fields) == 1)
+        self.assertIn('text', form.fields.keys())
+        comments = response.context['comments'][0]
+        self.assertEqual(comment.pk, comments.id)
+        self.assertEqual(comment.author, comments.author)
+        self.assertEqual(comment.text, comments.text)
+        self.assertEqual(comment.post, comments.post)
 
     def test_index_page_show_correct_context(self):
         """Шаблон index сформирован с правильным контекстом."""
@@ -140,6 +144,8 @@ class PostsPagesTest(TestCase):
         author = response.context['author']
         self.assertEqual(author.id, self.post.author.pk)
         self.assertEqual(author.username, self.user.username)
+        following = response.context['following']
+        self.assertIsInstance(following, bool)
 
     def test_group_posts_page_show_correct_context(self):
         """Шаблон group_list сформирован с правильным контекстом."""
@@ -185,71 +191,52 @@ class PostsPagesTest(TestCase):
         self.assertNotIn(self.post, post_list,
                          'Пост отобразился в посторонней группе')
 
-    def test_page_post_detail_show_created_comment(self):
-        """Успешно отправленный комментарий появился
-        на странице post_detail."""
-        list_old_comments_id = list(
-            Comment.objects.values_list('pk', flat=True)
-        )
-        form_data = {
-            'text': 'Новый тестовый комментарий',
-        }
-        response = self.authorized_client.post(
-            reverse(
-                'posts:add_comment',
-                kwargs={'post_id': self.post.id}
-            ),
-            data=form_data,
-            follow=True
-        )
-        created_comment_amount = (
-            Comment.objects.exclude(pk__in=list_old_comments_id)
-        )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertEqual(created_comment_amount.count(), 1)
-        created_comment = created_comment_amount.get()
-        self.assertEqual(created_comment.text, form_data['text'])
-        self.assertEqual(created_comment.author, self.user)
-        response2 = self.authorized_client.get(reverse(
-            'posts:post_detail',
-            kwargs={'post_id': self.post.id})
-        )
-        self.assertIn(created_comment, response2.context['comments'],
-                      'Комментарий не появился на странице поста')
-
     def test_authorized_client_can_follow_another_user(self):
         """Авторизованный пользователь может подписываться
         на других пользователей."""
+        old_follow = Follow.objects.all()
+        old_follow_count = old_follow.count()
         response = self.new_authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': self.user.username})
         )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        new_follow_count = Follow.objects.all().count()
+        new_follow = Follow.objects.filter(
+            author_id=self.user.id,
+            user_id=self.new_user.id)
         self.assertTrue(
-            Follow.objects.filter(
-                author_id=self.user.id,
-                user_id=self.new_user.id).exists(),
+            new_follow.exists(),
             'Авторизованный клиент не смог подписаться на автора'
         )
+        self.assertNotIn(new_follow, old_follow)
+        self.assertTrue(new_follow_count - old_follow_count == 1)
 
     def test_authorized_client_can_unfollow_another_user(self):
         """Авторизованный пользователь может отписываться
         от других пользователей."""
+        old_follow_amount = Follow.objects.all().count()
         Follow.objects.create(
             author_id=self.user.id,
             user_id=self.new_user.id
         )
+        new_follow = Follow.objects.filter(
+            author_id=self.user.id,
+            user_id=self.new_user.id)
+        self.assertTrue(new_follow.exists())
         response = self.new_authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': self.user.username})
         )
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        new_follow_amount = Follow.objects.all().count()
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(
             Follow.objects.filter(
                 author_id=self.user.id,
                 user_id=self.new_user.id).exists(),
             'Авторизованный клиент не смог отписаться на автора'
         )
+        self.assertEqual(new_follow_amount, old_follow_amount)
 
     def test_author_new_post_appears_follower_posts_list(self):
         """Новый пост автора появляется в ленте постов
@@ -355,5 +342,5 @@ class PaginatorViewsTest(TestCase):
             response = self.client.get(page + '?page=2')
             self.assertEqual(len(
                 response.context['page_obj']),
-                constants.NUMBER_OF_POSTS_FOR_PAGE_2
+                constants.NUMBER_OF_TEST_POSTS - constants.PAGE_POSTS_NUMBER
             )

@@ -20,7 +20,7 @@ class PostURLTests(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text='Основной тестовый пост',
             group=cls.group,
         )
 
@@ -91,7 +91,7 @@ class PostURLTests(TestCase):
         """Выполняется редирект при попытке не автора редактировать пост"""
         self.new_authorized_client != self.post.author
         response = self.new_authorized_client.get(
-            f'/posts/{self.post.id}/edit/'
+            reverse('posts:post_edit', kwargs={'post_id': self.post.id})
         )
         self.assertRedirects(
             response,

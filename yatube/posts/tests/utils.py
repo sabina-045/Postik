@@ -17,3 +17,18 @@ def get_temporary_image():
     )
 
     return uploaded
+
+
+def get_temporary_image_new():
+    small_gif_new = (
+        b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x00\x00\x00\x21\xf9\x04'
+        b'\x01\x0a\x00\x01\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02'
+        b'\x02\x4c\x01\x00\x3b'
+    )
+    uploaded_new = SimpleUploadedFile(
+        'small_new.gif',
+        small_gif_new,
+        content_type='image/gif'
+    )
+
+    return uploaded_new

@@ -7,8 +7,7 @@ from django.urls import reverse
 from django.conf import settings
 
 from posts.models import Group, Post, User, Comment
-
-from .utils import get_temporary_image
+from .utils import get_temporary_image, get_temporary_image_new
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -26,13 +25,8 @@ class PostsCreateFormTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text='Основной тестовый пост',
             group=cls.group,
-        )
-        cls.comment = Comment.objects.create(
-            author=cls.user,
-            text='Тестовый комментарий',
-            post=cls.post
         )
 
     @classmethod
@@ -75,6 +69,7 @@ class PostsCreateFormTest(TestCase):
         form_data = {
             'text': 'Измененный старый пост',
             'group': self.group.id,
+            'image': get_temporary_image_new()
         }
         response = self.authorized_client.post(
             reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
@@ -87,7 +82,8 @@ class PostsCreateFormTest(TestCase):
                 id=self.post.id,
                 author=self.post.author,
                 text=form_data['text'],
-                group=form_data['group']).exists(),
+                group=form_data['group'],
+                image='posts/small_new.gif').exists(),
             'Данные поста не изменились'
         )
 
@@ -104,10 +100,36 @@ class PostsCreateFormTest(TestCase):
             data=form_data,
             follow=True
         )
+        comments = Comment.objects.all()
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertFalse(
-            Comment.objects.filter(
-                id=self.comment.id,
-                text=form_data['text']).exists(),
+        self.assertEqual(
+            len(comments),
+            0,
             'Неавторизованный пользователь оставил комментарий'
         )
+
+    def test_page_post_detail_show_created_comment(self):
+        """Успешно отправленный комментарий появился
+        на странице post_detail."""
+        list_old_comments_id = list(
+            Comment.objects.values_list('pk', flat=True)
+        )
+        form_data = {
+            'text': 'Новый тестовый комментарий',
+        }
+        response = self.authorized_client.post(
+            reverse(
+                'posts:add_comment',
+                kwargs={'post_id': self.post.id}
+            ),
+            data=form_data,
+            follow=True
+        )
+        created_comment_amount = (
+            Comment.objects.exclude(pk__in=list_old_comments_id)
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(created_comment_amount.count(), 1)
+        created_comment = created_comment_amount.get()
+        self.assertEqual(created_comment.text, form_data['text'])
+        self.assertEqual(created_comment.author, self.user)
