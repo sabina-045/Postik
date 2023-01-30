@@ -1,7 +1,6 @@
 from django.test import TestCase
 
 from ..models import Group, Post, User
-from .. import constants
 
 
 class PostModelTest(TestCase):
@@ -23,7 +22,7 @@ class PostModelTest(TestCase):
         """Проверяем, что у моделей post и group
         корректно работает __str__."""
         expected_str = {
-            self.post: self.post.text[:constants.TEXT_LIMIT],
+            self.post: self.post.text,
             self.group: self.group.title,
         }
         for object, expected_value in expected_str.items():
