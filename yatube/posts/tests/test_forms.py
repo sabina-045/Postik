@@ -133,3 +133,4 @@ class PostsCreateFormTest(TestCase):
         created_comment = created_comment_amount.get()
         self.assertEqual(created_comment.text, form_data['text'])
         self.assertEqual(created_comment.author, self.user)
+        self.assertEqual(created_comment.post, self.post)

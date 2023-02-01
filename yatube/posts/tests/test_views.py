@@ -57,7 +57,7 @@ class PostsPagesTest(TestCase):
         self.assertIn('text', form.fields.keys())
         self.assertIn('image', form.fields.keys())
 
-    def check_page_post_fields(self, response, post=bool):
+    def check_page_post_fields(self, response, post=False):
         """Проверяем атрибуты поста из словаря context."""
         if post:
             post = response.context['post']
@@ -215,7 +215,7 @@ class PostsPagesTest(TestCase):
     def test_authorized_client_can_unfollow_another_user(self):
         """Авторизованный пользователь может отписываться
         от других пользователей."""
-        old_follow_amount = Follow.objects.all().count()
+        old_follow_amount = Follow.objects.count()
         Follow.objects.create(
             author_id=self.user.id,
             user_id=self.new_user.id
@@ -228,7 +228,7 @@ class PostsPagesTest(TestCase):
             'posts:profile_unfollow',
             kwargs={'username': self.user.username})
         )
-        new_follow_amount = Follow.objects.all().count()
+        new_follow_amount = Follow.objects.count()
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(
             Follow.objects.filter(

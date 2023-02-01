@@ -34,17 +34,11 @@ def profile(request, username):
     """Запрос в профайл пользователя"""
     author = get_object_or_404(User, username=username)
     author_posts_list = author.posts.all()
-    following = bool
+    following = False
     if request.user.is_authenticated:
-        if Follow.objects.filter(
+        following = Follow.objects.filter(
                 user_id=request.user.pk,
-                author_id=author.pk).exists():
-            Follow.objects.get(
-                user_id=request.user.pk,
-                author_id=author.pk)
-            following = True
-        else:
-            following = False
+                author_id=author.pk).exists()
     context = {
         'page_obj': post_paginator(request, author_posts_list),
         'author': author,
@@ -58,7 +52,7 @@ def post_detail(request, post_id):
     """Просмотр детальной информации отдельного поста"""
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
-    comments = post.comment.all()
+    comments = post.comments.all()
     context = {
         'post': post,
         'form': form,
@@ -134,7 +128,7 @@ def follow_index(request):
     context = {
         'page_obj': post_paginator(
             request,
-            Post.objects.filter(author__following__user=request.user.pk))
+            Post.objects.filter(author__following__user=request.user))
     }
 
     return render(request, 'posts/follow.html', context)

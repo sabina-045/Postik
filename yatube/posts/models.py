@@ -60,13 +60,13 @@ class Comment(CreatedModel):
     """Класс комментарий."""
     post = models.ForeignKey(
         Post,
-        related_name='comment',
+        related_name='comments',
         verbose_name='Пост',
         on_delete=models.CASCADE,
     )
     author = models.ForeignKey(
         User,
-        related_name='comment',
+        related_name='comments',
         on_delete=models.CASCADE,
         verbose_name="Автор комментария"
     )

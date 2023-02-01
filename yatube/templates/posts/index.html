@@ -5,9 +5,12 @@
   Последние обновления на сайте
 {% endblock %}
 {% block content %}
-{% include 'posts/includes/switcher.html' with index=page_obj %}
-{% cache 20 index_page %}
-  {% include 'posts/includes/post_card.html' %}
-  {% include 'posts/includes/paginator.html' %}
-{% endcache %}
+  {% include 'posts/includes/switcher.html' with index=True %}
+  {% cache 20 index_page %}
+    {% for post in page_obj %}
+      {% include 'posts/includes/post_card.html' %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+  {% endcache %}
 {% endblock %}
