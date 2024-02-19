@@ -1,3 +1,64 @@
-# hw05_final
+#### API_posts - социальная сеть для публикации личных дневников. 
+>API Posts - это API без лишних деталей. Благодаря этому его легко освоить и доработать. Через приложение уже можно читать посты и отправлять собственные записи, подписываться на авторов, оставлять комментарии. Эту основу легко расширить, добавляя новые возможности.
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+#### Как запустить проект:
+
++ клонируем репозиторий `git clone`
+`https://github.com/sabina-045/api_final_yatube.git`
++ переходим в него `cd api_final_yatube`
+    + разворачиваем виртуальное окружение
+    `python3 -m venv env` (Windows: `python -m venv env`)
+    + активируем его
+    `source env/bin/activate` (Windows: `source env/scripts/activate`)
+    + устанавливаем зависимости из файла requirements.txt
+    `pip install -r requirements.txt`
++ выполняем миграции
+`python3 manage.py migrate` (Windows: `python manage.py migrate`)
++ запускаем проект
+`python3 manage.py runserver` (Windows: `python manage.py runserver).
+И вперед!
+
+#### Инструкции и примеры
+
+>Основные эндпойнты `/api/v1/`:
+
+/posts/ - список постов и создание поста. Возможны параметры в запросе limit и offset.
+
+/posts/{post_id}/ - информация об отдельном посте, изменение его автором
+
+/groups/ - список групп (права на создание только у администратора)
+
+/groups/{group_id}/ - инфомарция об отдельной группе (права на изменение только у администратора)
+
+/posts/{post_id}/comments/ - список комментариев к отдельному посту, создание комментария к отдельному посту
+
+/posts/{post_id}/comments/{id}/ - информация об отдельном комментарии, изменение комментария автором.
+
+/follow/ - подписки пользователя на авторов, возможен поиск по username автора. Создание подписки на автора.
+
+_По умолчанию доступ только у авторизованных пользователей._
+_Аутентификация через JWT token._
+
+</br>
+
+> Примеры запросов:
+
+на получение списка групп:
+`http://127.0.0.1:8000/api/v1/groups/`
+
+получение комментария к посту:
+`http://127.0.0.1:8000/api/v1/posts/2/comments/1/`
+
+получение списка из двух постов:
+`http://127.0.0.1:8000/api/v1/posts/?limit=2`
+
+поиск подписки по имени автора:
+`http://127.0.0.1:8000/api/v1/follow/?search=mila`
+
+</br>
+
+> Команда создателей:
+Яндекс Практикум, Сабина Гаджиева.
+
+> Вопросы, и пожелания по адресу: sabina_045@mail.ru
+
